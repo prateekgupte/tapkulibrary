@@ -75,5 +75,8 @@
 	return nil;
 }
 
+- (NSArray *) calendarMonthView:(TKCalendarMonthView*)monthView colorsForMarksFromDate:(NSDate *)startDate toDate:(NSDate*)lastDate{
+    return nil;
+}
 
 @end

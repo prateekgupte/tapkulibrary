@@ -43,7 +43,11 @@
 	SEL action;
 	
 	int firstOfPrev,lastOfPrev;
+    
 	NSArray *marks;
+    NSArray *marksColors;
+    
+    
 	int today;
 	BOOL markWasOnToday;
 	
@@ -58,7 +62,7 @@
 @property (strong,nonatomic) NSDate *monthDate;
 @property (nonatomic, strong) NSMutableArray *accessibleElements;
 
-- (id) initWithMonth:(NSDate*)date marks:(NSArray*)marks startDayOnSunday:(BOOL)sunday;
+- (id) initWithMonth:(NSDate*)date marks:(NSArray*)marks marksColors:(NSArray *)colors startDayOnSunday:(BOOL)sunday;
 - (void) setTarget:(id)target action:(SEL)action;
 
 - (void) selectDay:(int)day;
@@ -214,16 +218,20 @@
 	
 	return [NSArray arrayWithObjects:firstDate,lastDate,nil];
 }
-- (id) initWithMonth:(NSDate*)date marks:(NSArray*)markArray startDayOnSunday:(BOOL)sunday{
+- (id) initWithMonth:(NSDate*)date marks:(NSArray*)markArray marksColors:(NSArray*)colors startDayOnSunday:(BOOL)sunday{
 	if(!(self=[super initWithFrame:CGRectZero])) return nil;
 
 	firstOfPrev = -1;
 	marks = markArray;
+    marksColors = colors;
+    
 	_monthDate = date;
 	startOnSunday = sunday;
 	
 	TKDateInformation dateInfo = [_monthDate dateInformationWithTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
 	firstWeekday = dateInfo.weekday;
+    
+    
 	
 	
 	NSDate *prev = [_monthDate previousMonth];
@@ -277,7 +285,7 @@
 	
 	return CGRectMake(col*46, row*44+6, 47, 45);
 }
-- (void) drawTileInRect:(CGRect)r day:(int)day mark:(BOOL)mark font:(UIFont*)f1 font2:(UIFont*)f2{
+- (void) drawTileInRect:(CGRect)r day:(int)day mark:(BOOL)mark markColor:(UIColor *)markColor font:(UIFont*)f1 font2:(UIFont*)f2{
 	
 	NSString *str = [NSString stringWithFormat:@"%d",day];
 	
@@ -289,13 +297,47 @@
 		  alignment: UITextAlignmentCenter];
 	
 	if(mark){
-		r.size.height = 10;
+		r.size.height = 13;
 		r.origin.y += 18;
 		
-		[@"•" drawInRect: r
-				withFont: f2
-		   lineBreakMode: UILineBreakModeWordWrap 
-			   alignment: UITextAlignmentCenter];
+        //draws the  . in Tiles when not selected
+        
+        
+        NSMutableParagraphStyle *paraAttr = [[NSMutableParagraphStyle defaultParagraphStyle ] mutableCopy];
+        [paraAttr setAlignment:UITextAlignmentCenter];
+        [paraAttr setLineBreakMode:UILineBreakModeWordWrap];
+        
+        NSDictionary *attrsDictionary;
+        
+        if(markColor)
+        {
+        attrsDictionary = [NSDictionary dictionaryWithObjectsAndKeys:f2,NSFontAttributeName,
+                                             markColor,NSForegroundColorAttributeName,
+                                             
+                                             paraAttr,NSParagraphStyleAttributeName,
+                                             nil];
+        }
+        else
+        {
+        attrsDictionary = [NSDictionary dictionaryWithObjectsAndKeys:f2,NSFontAttributeName,
+                                            [UIColor grayColor],NSForegroundColorAttributeName,
+                                            
+                                            paraAttr,NSParagraphStyleAttributeName,
+                                             nil];
+        }
+
+        
+        NSAttributedString *drawingString = [[NSAttributedString alloc]  initWithString:@"•" attributes:attrsDictionary];
+        
+        
+        [drawingString drawInRect:r];
+        
+        
+        
+//		[@"-" drawInRect: r
+//				withFont: f2
+//		   lineBreakMode: UILineBreakModeWordWrap 
+//			   alignment: UITextAlignmentCenter];
 	}
 	
 
@@ -327,9 +369,9 @@
 		for(int i = firstOfPrev;i<= lastOfPrev;i++){
 			r = [self rectForCellAtIndex:index];
 			if ([marks count] > 0)
-				[self drawTileInRect:r day:i mark:[[marks objectAtIndex:index] boolValue] font:font font2:font2];
+				[self drawTileInRect:r day:i mark:[[marks objectAtIndex:index] boolValue] markColor:[marksColors objectAtIndex:index] font:font font2:font2];
 			else
-				[self drawTileInRect:r day:i mark:NO font:font font2:font2];
+				[self drawTileInRect:r day:i mark:NO markColor:nil font:font font2:font2];
 			index++;
 		}
 	}
@@ -343,9 +385,9 @@
 		if(today == i) [[UIColor whiteColor] set];
 		
 		if ([marks count] > 0) 
-			[self drawTileInRect:r day:i mark:[[marks objectAtIndex:index] boolValue] font:font font2:font2];
+			[self drawTileInRect:r day:i mark:[[marks objectAtIndex:index] boolValue] markColor:[marksColors objectAtIndex:index] font:font font2:font2];
 		else
-			[self drawTileInRect:r day:i mark:NO font:font font2:font2];
+			[self drawTileInRect:r day:i mark:NO markColor:nil font:font font2:font2];
 		if(today == i) [color set];
 		index++;
 	}
@@ -355,9 +397,9 @@
 	while(index % 7 != 0){
 		r = [self rectForCellAtIndex:index] ;
 		if ([marks count] > 0) 
-			[self drawTileInRect:r day:i mark:[[marks objectAtIndex:index] boolValue] font:font font2:font2];
+			[self drawTileInRect:r day:i mark:[[marks objectAtIndex:index] boolValue] markColor:[marksColors objectAtIndex:index] font:font font2:font2];
 		else
-			[self drawTileInRect:r day:i mark:NO font:font font2:font2];
+			[self drawTileInRect:r day:i mark:NO markColor:nil font:font font2:font2];
 		i++;
 		index++;
 	}
@@ -554,6 +596,9 @@
 	return _currentDay;
 }
 - (UILabel *) dot{
+    
+    //draws the  . in Tiles when it is selected
+    
 	if(_dot==nil){
 		CGRect r = self.selectedImageView.bounds;
 		r.origin.y += 29;
@@ -607,7 +652,7 @@
 	self.backgroundColor = [UIColor grayColor];
 
 	sunday = s;
-	currentTile = [[TKCalendarMonthTiles alloc] initWithMonth:[[NSDate date] firstOfMonth] marks:nil startDayOnSunday:sunday];
+	currentTile = [[TKCalendarMonthTiles alloc] initWithMonth:[[NSDate date] firstOfMonth] marks:nil marksColors:nil startDayOnSunday:sunday];
 	[currentTile setTarget:self action:@selector(tile:)];
 	
 	CGRect r = CGRectMake(0, 0, self.tileBox.bounds.size.width, self.tileBox.bounds.size.height + self.tileBox.frame.origin.y);
@@ -726,7 +771,12 @@
 	
 	NSArray *dates = [TKCalendarMonthTiles rangeOfDatesInMonthGrid:nextMonth startOnSunday:sunday];
 	NSArray *ar = [self.dataSource calendarMonthView:self marksFromDate:[dates objectAtIndex:0] toDate:[dates lastObject]];
-	TKCalendarMonthTiles *newTile = [[TKCalendarMonthTiles alloc] initWithMonth:nextMonth marks:ar startDayOnSunday:sunday];
+    NSArray *colors = [self.dataSource calendarMonthView:self colorsForMarksFromDate:[dates objectAtIndex:0] toDate:[dates lastObject]];
+    
+    
+    
+    
+	TKCalendarMonthTiles *newTile = [[TKCalendarMonthTiles alloc] initWithMonth:nextMonth marks:ar marksColors:colors startDayOnSunday:sunday];
 	[newTile setTarget:self action:@selector(tile:)];
 	
 	
@@ -847,8 +897,11 @@
 		
 		NSArray *dates = [TKCalendarMonthTiles rangeOfDatesInMonthGrid:month startOnSunday:sunday];
 		NSArray *data = [self.dataSource calendarMonthView:self marksFromDate:[dates objectAtIndex:0] toDate:[dates lastObject]];
+        NSArray *colors = [self.dataSource calendarMonthView:self colorsForMarksFromDate:[dates objectAtIndex:0] toDate:[dates lastObject]];
+        
 		TKCalendarMonthTiles *newTile = [[TKCalendarMonthTiles alloc] initWithMonth:month 
-																			  marks:data 
+																			  marks:data
+                                                                        marksColors:colors
 																   startDayOnSunday:sunday];
 		[newTile setTarget:self action:@selector(tile:)];
 		[currentTile removeFromSuperview];
@@ -870,8 +923,10 @@
 - (void) reload{
 	NSArray *dates = [TKCalendarMonthTiles rangeOfDatesInMonthGrid:[currentTile monthDate] startOnSunday:sunday];
 	NSArray *ar = [self.dataSource calendarMonthView:self marksFromDate:[dates objectAtIndex:0] toDate:[dates lastObject]];
+    NSArray *colors = [self.dataSource calendarMonthView:self colorsForMarksFromDate:[dates objectAtIndex:0] toDate:[dates lastObject]];
+    
 	
-	TKCalendarMonthTiles *refresh = [[TKCalendarMonthTiles alloc] initWithMonth:[currentTile monthDate] marks:ar startDayOnSunday:sunday];
+	TKCalendarMonthTiles *refresh = [[TKCalendarMonthTiles alloc] initWithMonth:[currentTile monthDate] marks:ar marksColors:colors startDayOnSunday:sunday];
 	[refresh setTarget:self action:@selector(tile:)];
 	
 	[self.tileBox addSubview:refresh];
