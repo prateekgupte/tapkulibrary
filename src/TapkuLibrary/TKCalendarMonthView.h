@@ -128,4 +128,21 @@
  
  */
 - (NSArray*) calendarMonthView:(TKCalendarMonthView*)monthView marksFromDate:(NSDate*)startDate toDate:(NSDate*)lastDate;
+
+
+
+/** A data source for gathering formatting information about the non Selected Tile for a particular day
+ 
+ 
+ @param monthView The calendar month grid.
+ @param startDate The first date shown by the calendar month grid.
+ @param lastDate The last date shown by the calendar month grid.
+ @return Returns an array of UIColor objects corresponding the number of days specified in the start and last day parameters. Each UIColor variable will give a Color value that will be used to display a dot under the day.
+ 
+ */
+
+- (NSArray *) calendarMonthView:(TKCalendarMonthView*)monthView colorsForMarksFromDate:(NSDate *)startDate toDate:(NSDate*)lastDate;
+
+
+
 @end
