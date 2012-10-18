@@ -483,7 +483,7 @@
 	
 }
 
-
+#define LONG_PRESS_THRESHOLD 3.0
 - (void) reactToTouch:(UITouch*)touch down:(BOOL)down{
 	
 	CGPoint p = [touch locationInView:self];
@@ -561,6 +561,13 @@
 		selectedDay = day;
 		selectedPortion = portion;
 		[target performSelector:action withObject:[NSArray arrayWithObject:[NSNumber numberWithInt:day]]];
+        
+        
+        
+//        [NSObject cancelPreviousPerformRequestsWithTarget:target selector:@selector(tileDelay:)];
+        [NSObject cancelPreviousPerformRequestsWithTarget:target];
+        [target performSelector:@selector(tileDelay:) withObject:[NSArray arrayWithObject:[NSNumber numberWithInt:day]] afterDelay:LONG_PRESS_THRESHOLD];
+        
 		
 	}else if(down){
 		[target performSelector:action withObject:[NSArray arrayWithObjects:[NSNumber numberWithInt:day],[NSNumber numberWithInt:portion],nil]];
@@ -569,6 +576,7 @@
 	}
 	
 }
+
 - (void) touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event{
 	//[super touchesBegan:touches withEvent:event];
 	[self reactToTouch:[touches anyObject] down:NO];
@@ -578,6 +586,9 @@
 }
 - (void) touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event{
 	[self reactToTouch:[touches anyObject] down:YES];
+    
+    [NSObject cancelPreviousPerformRequestsWithTarget:target];
+//    [NSObject cancelPreviousPerformRequestsWithTarget:target selector:@selector(tileDelay:)];
 }
 
 - (UILabel *) currentDay{
@@ -975,6 +986,51 @@
 		if([self.delegate respondsToSelector:@selector(calendarMonthView:monthDidChange:animated:)])
 			[self.delegate calendarMonthView:self monthDidChange:dateForMonth animated:YES];
 
+		
+	}
+	
+}
+
+- (void) tileDelay:(NSArray*)ar{
+	
+	if([ar count] < 2){
+		
+		if([self.delegate respondsToSelector:@selector(calendarMonthView:didLongPressDate:)])
+			[self.delegate calendarMonthView:self didLongPressDate:[self dateSelected]];
+        
+	}else{
+		
+		int direction = [[ar lastObject] intValue];
+		UIButton *b = direction > 1 ? self.rightArrow : self.leftArrow;
+		
+		NSDate* newMonth = [self dateForMonthChange:b];
+		if ([self.delegate respondsToSelector:@selector(calendarMonthView:monthShouldChange:animated:)] && ![delegate calendarMonthView:self monthShouldChange:newMonth animated:YES])
+			return;
+		
+		if ([self.delegate respondsToSelector:@selector(calendarMonthView:monthWillChange:animated:)])
+			[self.delegate calendarMonthView:self monthWillChange:newMonth animated:YES];
+		
+		
+		
+		[self changeMonthAnimation:b];
+		
+		int day = [[ar objectAtIndex:0] intValue];
+        
+        
+		// thanks rafael
+		TKDateInformation info = [[currentTile monthDate] dateInformationWithTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
+		info.day = day;
+        
+        NSDate *dateForMonth = [NSDate dateFromDateInformation:info  timeZone:[NSTimeZone timeZoneWithName:@"GMT"]];
+		[currentTile selectDay:day];
+		
+		
+		if([self.delegate respondsToSelector:@selector(calendarMonthView:didLongPressDate:)])
+			[self.delegate calendarMonthView:self didLongPressDate:dateForMonth];
+		
+		if([self.delegate respondsToSelector:@selector(calendarMonthView:monthDidChange:animated:)])
+			[self.delegate calendarMonthView:self monthDidChange:dateForMonth animated:YES];
+        
 		
 	}
 	

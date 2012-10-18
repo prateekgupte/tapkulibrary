@@ -91,6 +91,12 @@
  */ 
 - (void) calendarMonthView:(TKCalendarMonthView*)monthView didSelectDate:(NSDate*)date;
 
+/** The highlighed date changed and was long pressed
+ @param monthView The calendar month view.
+ @param date The highlighted date.
+ */
+- (void) calendarMonthView:(TKCalendarMonthView*)monthView didLongPressDate:(NSDate*)date;
+
 
 /** The calendar should change the current month to grid shown.
  @param monthView The calendar month view.
